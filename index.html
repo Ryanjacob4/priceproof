@@ -210,7 +210,7 @@ h1 { font-family: var(--f-display); font-stretch: 85%; font-weight: 850; font-si
     <label for="modelIn">Model <small>Change this if Google retires the default.</small>
       <input id="modelIn" type="text" value="gemini-flash-latest">
     </label>
-    <div class="row"><button class="btn primary small" id="saveKey" type="button">Save</button><button class="btn small" id="clearKey" type="button">Remove key</button><span id="setMsg" class="step"></span></div>
+    <div class="row"><button class="btn primary small" id="saveKey" type="button">Save</button><button class="btn small" id="testKey" type="button">Test connection</button><button class="btn small" id="clearKey" type="button">Remove key</button><span id="setMsg" class="step"></span></div>
   </section>
 
   <!-- SCAN VIEW -->
@@ -507,18 +507,38 @@ Rules:
 - Coupons, BOGO savings and other negative lines go in "discounts" with a negative "amount".
 - Use null for anything you cannot read. Never invent items.`;
 
+const inFrame = (() => { try { return window.top !== window.self; } catch (e) { return true; } })();
+// Two ways to send the key. Some browsers and networks reject the custom header, so fall back to the URL parameter.
+async function geminiFetch(model, key, payload) {
+  const base = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
+  const body = JSON.stringify(payload);
+  let first;
+  try {
+    return await fetch(base, { method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": key }, body });
+  } catch (e) { first = e; }
+  try {
+    return await fetch(`${base}?key=${encodeURIComponent(key)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body });
+  } catch (e) {
+    const why = (e && e.message) || (first && first.message) || "network error";
+    throw new Error(inFrame
+      ? `Couldn't reach Gemini (${why}). Live scanning is blocked inside the Claude preview. Open the app from your GitHub Pages link instead.`
+      : `Couldn't reach Gemini (${why}). Try opening the link in Safari or Chrome instead of an in-app browser, turn off any VPN or content blocker, or switch from Rutgers Wi-Fi to cell data.`);
+  }
+}
+async function testGemini() {
+  const key = store.get("key", ""), model = store.get("model", "gemini-flash-latest");
+  if (!key) return "Save a key first.";
+  try {
+    const r = await geminiFetch(model, key, { contents: [{ parts: [{ text: "Reply with the word OK." }] }] });
+    if (r.ok) return "Connected. Gemini is working.";
+    let msg = ""; try { msg = (await r.json()).error.message; } catch (e) {}
+    return `Gemini answered with error ${r.status}: ${msg || "no details"}`;
+  } catch (e) { return e.message; }
+}
 async function callGemini(tagImgs, rcptImg) {
   const key = store.get("key", ""), model = store.get("model", "gemini-flash-latest");
   const parts = [{ text: PROMPT(tagImgs.length) }, ...tagImgs.map(i => ({ inline_data: { mime_type: i.mime, data: i.data } })), { inline_data: { mime_type: rcptImg.mime, data: rcptImg.data } }];
-  let r;
-  try {
-    r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
-      method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": key },
-      body: JSON.stringify({ contents: [{ parts }], generationConfig: { responseMimeType: "application/json", temperature: 0 } })
-    });
-  } catch (e) {
-    throw new Error("Couldn't reach Gemini. Live scanning is blocked inside the Claude preview, so run the app from your own link or laptop (see the README). Otherwise, check your internet connection.");
-  }
+  const r = await geminiFetch(model, key, { contents: [{ parts }], generationConfig: { responseMimeType: "application/json", temperature: 0 } });
   if (!r.ok) {
     let msg = ""; try { msg = (await r.json()).error.message; } catch (e) {}
     if (r.status === 404) throw new Error(`Gemini doesn't recognize the model "${model}". Change it in Settings. ${msg}`);
@@ -750,6 +770,11 @@ $("#saveKey").addEventListener("click", () => {
   $("#setMsg").textContent = "Saved"; setMode(); setTimeout(() => $("#setMsg").textContent = "", 1500);
 });
 $("#clearKey").addEventListener("click", () => { store.del("key"); $("#keyIn").value = ""; setMode(); });
+$("#testKey").addEventListener("click", async () => {
+  store.set("key", $("#keyIn").value.trim()); store.set("model", $("#modelIn").value.trim() || "gemini-flash-latest"); setMode();
+  $("#setMsg").textContent = "Testing…";
+  $("#setMsg").textContent = await testGemini();
+});
 // "new receipt" button on results also used when not in demo
 setMode();
 runDemo();
