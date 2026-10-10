@@ -1,0 +1,759 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>PriceProof</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..900&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: one column on phones; on wide screens the receipt sits left like paper on a counter, findings on the right. The shelf-tag yellow is used once, for the overcharge total. */
+:root {
+  --bg: #EDF0EB;
+  --surface: #FFFFFF;
+  --surface-2: #F5F7F3;
+  --ink: #16201B;
+  --muted: #56635B;
+  --line: #D3DAD3;
+  --tag: #FFD84A;
+  --tag-ink: #231C00;
+  --over: #C8282B;
+  --over-soft: #FBE7E6;
+  --warn: #9A5B00;
+  --warn-soft: #FDF0DC;
+  --ok: #1D7A45;
+  --ok-soft: #E2F3E8;
+  --accent: #1F4B3A;
+  --accent-ink: #FFFFFF;
+  --paper: #FFFFFF;
+  --paper-ink: #222622;
+  --paper-faint: #8A908A;
+  --focus: #2F6BFF;
+  --f-display: "Archivo", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --f-body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0F1411; --surface: #172019; --surface-2: #1C261F; --ink: #E7EDE8; --muted: #9AA79F; --line: #2B372F;
+    --tag: #F4CC36; --tag-ink: #1E1700; --over: #FF6E6A; --over-soft: #3A1B1A; --warn: #F3A945; --warn-soft: #34270F;
+    --ok: #57C985; --ok-soft: #15301F; --accent: #8FD3B0; --accent-ink: #0F1411;
+    --paper: #F3F3EE; --paper-ink: #1E221E; --paper-faint: #7D837D; --focus: #8EB0FF; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0F1411; --surface: #172019; --surface-2: #1C261F; --ink: #E7EDE8; --muted: #9AA79F; --line: #2B372F;
+  --tag: #F4CC36; --tag-ink: #1E1700; --over: #FF6E6A; --over-soft: #3A1B1A; --warn: #F3A945; --warn-soft: #34270F;
+  --ok: #57C985; --ok-soft: #15301F; --accent: #8FD3B0; --accent-ink: #0F1411;
+  --paper: #F3F3EE; --paper-ink: #1E221E; --paper-faint: #7D837D; --focus: #8EB0FF; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5; }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+.wrap { max-width: 1080px; margin: 0 auto; padding-inline: 16px; padding-block: 0 48px; }
+
+/* top bar */
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); }
+.bar-in { max-width: 1080px; margin: 0 auto; padding: 10px 16px; display: flex; align-items: center; gap: 12px; }
+.logo { display: flex; align-items: center; gap: 8px; font-family: var(--f-display); font-weight: 800; font-size: 20px; letter-spacing: -0.01em; color: var(--ink); text-decoration: none; }
+.logo svg { width: 26px; height: 26px; }
+.mode { margin-left: auto; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--paper-faint); }
+.dot.live { background: var(--ok); }
+.btn { font: 600 14px/1 var(--f-body); border-radius: 10px; padding: 11px 16px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; display: inline-flex; align-items: center; gap: 8px; justify-content: center; }
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.ghost { background: transparent; border-color: transparent; color: var(--muted); padding-inline: 8px; }
+.btn.ghost:hover { color: var(--ink); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn.small { padding: 8px 12px; font-size: 13px; }
+
+/* hero / scan */
+h1 { font-family: var(--f-display); font-stretch: 85%; font-weight: 850; font-size: clamp(30px, 6vw, 48px); line-height: 1.02; letter-spacing: -0.02em; margin: 28px 0 10px; text-wrap: balance; }
+.lede { color: var(--muted); max-width: 58ch; margin: 0 0 22px; }
+.drops { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.drop { background: var(--surface); border: 1.5px dashed var(--line); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.drop.has { border-style: solid; }
+.drop.over { border-color: var(--accent); }
+.drop h3 { margin: 0; font-size: 15px; display: flex; gap: 10px; align-items: baseline; }
+.step { font-family: var(--f-mono); font-size: 12px; color: var(--muted); }
+.drop p { margin: 0; font-size: 13px; color: var(--muted); }
+.thumbs { display: flex; gap: 8px; flex-wrap: wrap; }
+.thumbs img { width: 64px; height: 64px; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); }
+.file { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.go { margin-top: 18px; }
+.progress { margin-top: 16px; font-family: var(--f-mono); font-size: 13px; color: var(--muted); display: grid; gap: 4px; }
+.progress .on { color: var(--ink); }
+.progress .done { color: var(--ok); }
+.err { margin-top: 14px; background: var(--over-soft); color: var(--ink); border-radius: 10px; padding: 12px 14px; font-size: 14px; }
+
+/* results */
+.sample { margin-top: 20px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 14px; font-size: 13px; color: var(--muted); }
+.sample b { color: var(--ink); }
+.summary { margin-top: 18px; display: grid; grid-template-columns: auto 1fr; gap: 20px; align-items: center; }
+.pricetag { position: relative; background: var(--tag); color: var(--tag-ink); border-radius: 6px 18px 18px 6px; padding: 14px 26px 14px 30px; min-width: 210px; }
+.pricetag::before { content: ""; position: absolute; left: 11px; top: 50%; width: 9px; height: 9px; margin-top: -4.5px; border-radius: 50%; background: var(--bg); }
+.pricetag .lbl { font: 700 11px/1 var(--f-body); letter-spacing: .14em; text-transform: uppercase; }
+.pricetag .amt { font-family: var(--f-display); font-stretch: 70%; font-weight: 900; font-size: clamp(54px, 11vw, 78px); line-height: .95; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.pricetag .amt sup { font-size: .45em; vertical-align: .9em; margin-right: 2px; }
+.pricetag.clean { background: var(--ok-soft); color: var(--ok); }
+.sumtext h2 { margin: 0 0 6px; font-family: var(--f-display); font-stretch: 90%; font-weight: 800; font-size: clamp(22px, 3.6vw, 30px); line-height: 1.1; text-wrap: balance; }
+.sumtext p { margin: 0; color: var(--muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.chip { font-size: 12px; font-weight: 600; padding: 4px 9px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); color: var(--muted); }
+.chip.r { background: var(--over-soft); border-color: transparent; color: var(--over); }
+.chip.a { background: var(--warn-soft); border-color: transparent; color: var(--warn); }
+.chip.g { background: var(--ok-soft); border-color: transparent; color: var(--ok); }
+
+.recall { margin-top: 18px; border-radius: 12px; background: var(--over-soft); border-left: 5px solid var(--over); padding: 14px 16px; display: grid; gap: 4px; }
+.recall b { color: var(--over); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; }
+.recall .rt { font-weight: 700; }
+.recall .rs { font-size: 13px; color: var(--muted); }
+
+.grid { margin-top: 22px; display: grid; grid-template-columns: minmax(0, 380px) minmax(0, 1fr); gap: 22px; align-items: start; }
+.receipt { background: var(--paper); color: var(--paper-ink); font-family: var(--f-mono); font-size: 13px; padding: 20px 18px 26px; border-radius: 4px; box-shadow: 0 1px 0 rgba(0,0,0,.04), 0 8px 24px rgba(20,30,25,.10); position: relative;
+  -webkit-mask: radial-gradient(circle 6px at 8px 100%, transparent 98%, #000) -8px 0/16px 100% repeat-x;
+          mask: radial-gradient(circle 6px at 8px 100%, transparent 98%, #000) -8px 0/16px 100% repeat-x; }
+.receipt .hd { text-align: center; line-height: 1.35; margin-bottom: 12px; }
+.receipt .hd .st { font-weight: 600; font-size: 14px; }
+.receipt .hd .sm { color: var(--paper-faint); font-size: 12px; }
+.rl { display: grid; grid-template-columns: 1fr auto 74px; gap: 8px; align-items: baseline; padding: 3px 4px; border-radius: 3px; }
+.rl .px { font-variant-numeric: tabular-nums; text-align: right; }
+.rl .mk { font-family: var(--f-body); font-size: 11px; font-weight: 700; text-align: right; white-space: nowrap; }
+.rl.over { background: rgba(200,40,43,.10); }
+.rl.over .mk { color: #B3201F; }
+.rl.dup .mk, .rl.warn .mk { color: #8A5100; }
+.rl.dup { background: rgba(230,150,20,.12); }
+.rl.ok .mk { color: #1D7A45; }
+.rl.under .mk { color: #1D7A45; }
+.rl.notag .mk { color: var(--paper-faint); font-weight: 600; }
+.rl.disc { color: var(--paper-faint); }
+.rl.recall { background: rgba(200,40,43,.10); }
+.rl.recall .mk span { font-size: 10px; font-weight: 800; color: #fff; background: #B3201F; padding: 2px 5px; border-radius: 3px; letter-spacing: .04em; }
+.rsep { border: 0; border-top: 1px dashed #B9BDB8; margin: 10px 0; }
+.rtot { display: flex; justify-content: space-between; font-weight: 600; padding: 0 4px; }
+
+.finds { display: grid; gap: 10px; min-width: 0; }
+.finds h3 { margin: 0 0 2px; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: grid; grid-template-columns: 6px 1fr auto; gap: 14px; align-items: start; }
+.card .sv { align-self: stretch; border-radius: 3px; background: var(--line); }
+.card.r .sv { background: var(--over); }
+.card.a .sv { background: var(--warn); }
+.card.g .sv { background: var(--ok); }
+.card .t { font-weight: 700; }
+.card .d { font-size: 13px; color: var(--muted); margin-top: 2px; }
+.card .cmp { font-family: var(--f-mono); font-size: 12px; margin-top: 6px; color: var(--ink); }
+.card .amt { font-family: var(--f-display); font-stretch: 80%; font-weight: 800; font-size: 22px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.card.r .amt { color: var(--over); }
+.card.a .amt { color: var(--warn); }
+.card.g .amt { color: var(--ok); }
+.card .act { margin-top: 8px; }
+.okline { font-size: 13px; color: var(--muted); padding: 4px 2px; }
+
+.next { margin-top: 26px; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.panel h3 { margin: 0; font-size: 16px; }
+.panel p { margin: 0; font-size: 13px; color: var(--muted); }
+.panel textarea { width: 100%; min-height: 190px; resize: vertical; font: 12.5px/1.5 var(--f-mono); color: var(--ink); background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
+.contact { font-family: var(--f-mono); font-size: 13px; user-select: all; }
+
+.history { margin-top: 26px; }
+.history h3 { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; }
+.hrow { display: grid; grid-template-columns: 1fr auto auto; gap: 12px; padding: 8px 0; border-top: 1px solid var(--line); font-size: 14px; }
+.hrow .m { color: var(--muted); font-family: var(--f-mono); font-size: 12px; }
+.hrow .v { font-variant-numeric: tabular-nums; font-weight: 600; }
+
+/* settings */
+.settings { margin-top: 18px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: grid; gap: 12px; }
+.settings label { font-size: 13px; font-weight: 600; display: grid; gap: 6px; }
+.settings input { font: 14px var(--f-mono); padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); width: 100%; }
+.settings small { color: var(--muted); font-weight: 400; }
+
+/* why */
+.why { margin-top: 40px; border-top: 1px solid var(--line); padding-top: 22px; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; }
+.why .fig { font-family: var(--f-display); font-stretch: 75%; font-weight: 900; font-size: 40px; line-height: 1; font-variant-numeric: tabular-nums; }
+.why p { margin: 6px 0 0; font-size: 13px; color: var(--muted); }
+.fine { margin-top: 18px; font-size: 12px; color: var(--muted); max-width: 75ch; }
+
+@media (max-width: 760px) {
+  .grid { grid-template-columns: minmax(0, 1fr); }
+  .summary { grid-template-columns: 1fr; }
+  .pricetag { justify-self: start; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .pricetag.pop { animation: pop .5s cubic-bezier(.2,1.4,.4,1) both; }
+  @keyframes pop { from { transform: rotate(-4deg) scale(.9); } to { transform: none; } }
+}
+</style>
+
+<div class="bar"><div class="bar-in">
+  <a class="logo" href="#top" aria-label="PriceProof home">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4 9a3 3 0 0 1 3-3h14l7 10-7 10H7a3 3 0 0 1-3-3z" fill="var(--tag)" stroke="var(--ink)" stroke-width="2"/><circle cx="9.5" cy="16" r="2" fill="var(--ink)"/><path d="M15 16.5l2.5 2.5 5-6" fill="none" stroke="var(--ink)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    PriceProof
+  </a>
+  <span class="mode" id="modeLbl"><span class="dot" id="modeDot"></span><span id="modeTxt">Sample mode</span></span>
+  <button class="btn ghost small" id="setBtn" type="button">Settings</button>
+</div></div>
+
+<main class="wrap" id="top">
+  <section class="settings" id="settings" hidden>
+    <label for="keyIn">Gemini API key <small>Stored only in this browser. Get one free at aistudio.google.com.</small>
+      <input id="keyIn" type="password" autocomplete="off" placeholder="Paste your key">
+    </label>
+    <label for="modelIn">Model <small>Change this if Google retires the default.</small>
+      <input id="modelIn" type="text" value="gemini-flash-latest">
+    </label>
+    <div class="row"><button class="btn primary small" id="saveKey" type="button">Save</button><button class="btn small" id="clearKey" type="button">Remove key</button><span id="setMsg" class="step"></span></div>
+  </section>
+
+  <!-- SCAN VIEW -->
+  <section id="scanView" hidden>
+    <h1>Did the register match the shelf?</h1>
+    <p class="lede">Snap the shelf tags for what you bought, then your receipt. PriceProof matches every line, catches overcharges, missed deals and double scans, and checks the FDA for recalls.</p>
+    <div class="drops">
+      <label class="drop" id="tagDrop" for="tagIn">
+        <h3><span class="step">1</span> Shelf tags</h3>
+        <p>One photo per tag, or several tags in one photo.</p>
+        <input class="file" id="tagIn" type="file" accept="image/*" multiple>
+        <div class="thumbs" id="tagThumbs"></div>
+        <span class="btn small" aria-hidden="true">Add tag photos</span>
+      </label>
+      <label class="drop" id="rcptDrop" for="rcptIn">
+        <h3><span class="step">2</span> Receipt</h3>
+        <p>Lay it flat, whole receipt in frame.</p>
+        <input class="file" id="rcptIn" type="file" accept="image/*">
+        <div class="thumbs" id="rcptThumbs"></div>
+        <span class="btn small" aria-hidden="true">Add receipt photo</span>
+      </label>
+    </div>
+    <div class="row go">
+      <button class="btn primary" id="runBtn" type="button" disabled>Check my receipt</button>
+      <button class="btn" id="sampleBtn" type="button">Use the sample receipt</button>
+    </div>
+    <div class="progress" id="progress" hidden></div>
+    <div class="err" id="err" hidden></div>
+  </section>
+
+  <!-- RESULT VIEW -->
+  <section id="resultView">
+    <div class="sample" id="sampleNote"><b>Sample receipt.</b> Fictional store and products, built to show every kind of check. <button class="btn small primary" id="newBtn" type="button">Check a real receipt</button></div>
+    <div class="summary">
+      <div class="pricetag pop" id="tagBox"><div class="lbl" id="tagLbl">Overcharged</div><div class="amt" id="tagAmt"><sup>$</sup>0.00</div></div>
+      <div class="sumtext"><h2 id="sumHead"></h2><p id="sumSub"></p><div class="chips" id="chips"></div></div>
+    </div>
+    <div id="recalls"></div>
+    <div class="grid">
+      <div class="receipt" id="receipt"></div>
+      <div class="finds" id="finds"></div>
+    </div>
+    <div class="next" id="next"></div>
+    <div class="history" id="history" hidden></div>
+    <div class="row" style="margin-top:22px"><button class="btn" id="againBtn" type="button">Check another receipt</button></div>
+  </section>
+
+  <section class="why" aria-label="Why this matters">
+    <div><div class="fig">2,000+</div><p>times New Jersey inspectors found Dollar General charging more than the posted price, across 58 stores checked in 2022–23. <a href="https://njoag.gov/?p=121908" target="_blank" rel="noopener">NJ Attorney General</a></p></div>
+    <div><div class="fig">$5.95</div><p>the largest single overcharge inspectors found on one item. The chain paid $1.2 million to settle.</p></div>
+    <div><div class="fig">2%</div><p>overcharge error rate that counts as a failed store audit under that settlement. Shoppers rarely check every line.</p></div>
+  </section>
+  <p class="fine">PriceProof compares what it reads from your photos. Always confirm a flagged line against the tag before asking for a refund. Recall matches are possible matches only: check the brand, size and lot code on your package against the FDA notice.</p>
+</main>
+
+<script>
+// ===== CORE-START (pure logic, no DOM) =====
+const STOP = new Set(["AND","THE","OF","A","WITH","IN","FOR","&"]);
+const ABBR = { OJ:"ORANGE JUICE", PB:"PEANUT BUTTER", CHKN:"CHICKEN", BNLS:"BONELESS", MOZZ:"MOZZARELLA", ORG:"ORGANIC", FRZ:"FROZEN", VEG:"VEGETABLE", TP:"TOILET PAPER", PTO:"POTATO", BF:"BEEF", GRND:"GROUND", YOG:"YOGURT", SPAG:"SPAGHETTI" };
+const UNIT = { Z:"OZ", OZ:"OZ", FZ:"OZ", FLOZ:"OZ", LB:"LB", LBS:"LB", CT:"CT", PK:"CT", QT:"QT", L:"L", ML:"ML", GAL:"GAL", G:"G" };
+const SIZE_RE = /^(\d+(?:\.\d+)?)(Z|OZ|FZ|FLOZ|LB|LBS|CT|PK|QT|L|ML|GAL|G)$/;
+
+function normSize(num, unit) {
+  let u = UNIT[unit]; if (!u) return null;
+  if (unit === "G") u = parseFloat(num) >= 10 ? "G" : "GAL"; // "1G" on a receipt is a gallon, "500G" is grams
+  return (+num) + u;
+}
+function tokenize(text) {
+  const raw = String(text || "").toUpperCase().replace(/[^A-Z0-9.&]+/g, " ").trim().split(/\s+/).filter(Boolean);
+  const words = []; let size = null;
+  for (let i = 0; i < raw.length; i++) {
+    let t = raw[i].replace(/\.$/, "");
+    const nxt = raw[i + 1] ? raw[i + 1].replace(/\.$/, "") : "";
+    if (/^\d+(\.\d+)?$/.test(t) && UNIT[nxt]) { size = normSize(t, nxt); i++; continue; }
+    if (t === "FL" && nxt === "OZ") continue;
+    const m = t.match(SIZE_RE);
+    if (m) { size = normSize(m[1], m[2]); continue; }
+    if (/^[\d.@$]+$/.test(t) || STOP.has(t)) continue;
+    if (ABBR[t]) { words.push(...ABBR[t].split(" ")); continue; }
+    words.push(t);
+  }
+  return { words, size };
+}
+// consonant skeleton: keep first letter, drop later vowels, collapse doubles. SPINACH -> SPNCH, which is how receipts abbreviate
+function skel(w) { let s = w[0] + w.slice(1).replace(/[AEIOU]/g, ""); return s.replace(/(.)\1+/g, "$1"); }
+function tokMatch(r, t) {
+  if (r === t) return 1;
+  if (r.length >= 3 && t.startsWith(r)) return 0.9;
+  if (r.length >= 3) {
+    const sr = skel(r), st = skel(t);
+    if (sr === st) return 0.85;
+    if (sr.length >= 3 && st.startsWith(sr)) return 0.75;
+  }
+  return 0;
+}
+function tagTokens(tag) {
+  const b = tokenize(tag.brand).words, n = tokenize(tag.name).words;
+  const initials = b.length >= 2 ? b.map(w => w[0]).join("") : "";
+  return { words: [...b, ...n], brandCount: b.length, initials, size: tokenize(tag.size || "").size || tokenize(tag.name).size };
+}
+function scoreText(text, tt) {
+  const { words: R, size } = tokenize(text);
+  if (!R.length || !tt.words.length) return 0;
+  let hits = 0; const used = new Set();
+  for (const r of R) {
+    let best = 0, bi = -1;
+    if (tt.initials && r === tt.initials) { best = 1; for (let i = 0; i < tt.brandCount; i++) used.add(i); }
+    tt.words.forEach((t, i) => { const m = tokMatch(r, t); if (m > best) { best = m; bi = i; } });
+    hits += best; if (bi >= 0) used.add(bi);
+  }
+  let s = 0.55 * (hits / R.length) + 0.45 * (used.size / tt.words.length);
+  if (size && tt.size) s += size === tt.size ? 0.12 : -0.25;
+  return s;
+}
+function bestTag(text, alt, tts, min) {
+  let best = { i: -1, s: 0 };
+  tts.forEach((tt, i) => {
+    let s = scoreText(text, tt);
+    if (alt) s = Math.max(s, scoreText(alt, tt) * 0.95);
+    if (s > best.s) best = { i, s };
+  });
+  return best.s >= min ? best : { i: -1, s: best.s };
+}
+function parseDeal(txt) {
+  if (!txt) return null;
+  const t = String(txt).toUpperCase();
+  if (/BOGO|BUY\s*(1|ONE)\s*GET\s*(1|ONE)/.test(t)) return { type: "bogo", min: 2, label: "Buy 1 Get 1" };
+  const m = t.match(/(\d+)\s*(?:\/|FOR)\s*\$?\s*(\d+(?:\.\d{1,2})?)/);
+  if (m && +m[1] >= 2) return { type: "multi", q: +m[1], price: +m[2], min: +m[1], label: `${m[1]} for $${(+m[2]).toFixed(2)}` };
+  return null;
+}
+const r2 = x => Math.round(x * 100) / 100;
+
+function analyze(tags, receipt, opts = {}) {
+  const date = receipt.date || opts.today || new Date().toISOString().slice(0, 10);
+  const tts = tags.map(tagTokens);
+  const items = receipt.items || [];
+  const groups = tags.map((tag, i) => ({ tag, ti: i, lines: [], discLines: [] }));
+  const lineMatch = items.map(it => {
+    const b = bestTag(it.raw, it.expanded, tts, 0.5);
+    if (b.i >= 0) groups[b.i].lines.push(items.indexOf(it));
+    return b;
+  });
+  const discounts = receipt.discounts || [];
+  const looseDisc = [];
+  discounts.forEach((d, di) => {
+    const b = bestTag(d.raw, null, tts, 0.4);
+    if (b.i >= 0) groups[b.i].discLines.push(di); else looseDisc.push(di);
+  });
+  const results = [];
+  for (const g of groups) {
+    if (!g.lines.length) continue;
+    const tag = g.tag;
+    const n = g.lines.reduce((a, li) => a + (+items[li].qty || 1), 0);
+    const gross = r2(g.lines.reduce((a, li) => a + (+items[li].price || 0), 0));
+    const disc = r2(g.discLines.reduce((a, di) => a + (-Math.abs(+discounts[di].amount || 0)), 0));
+    const charged = r2(gross + disc);
+    const hasSale = tag.sale_price != null && tag.sale_price !== "";
+    const saleExpired = hasSale && tag.sale_ends && tag.sale_ends < date;
+    const posted = +(hasSale ? tag.sale_price : tag.price);
+    const deal = parseDeal(tag.deal_text);
+    let expected;
+    if (deal && deal.type === "bogo") expected = Math.ceil(n / 2) * posted;
+    else if (deal && deal.type === "multi") expected = Math.floor(n / deal.q) * deal.price + (n % deal.q) * posted;
+    else expected = n * posted;
+    expected = r2(expected);
+    const diff = r2(charged - expected);
+    let status = "ok";
+    if (diff > 0.009) {
+      if (deal && n >= deal.min && Math.abs(gross - n * posted) < 0.02 && !g.discLines.length) status = "deal";
+      else if (saleExpired) status = "expired";
+      else status = "over";
+    } else if (diff < -0.009) status = "under";
+    let dup = null;
+    if (!deal && g.lines.length >= 2) {
+      const first = items[g.lines[0]];
+      if (g.lines.every(li => items[li].raw === first.raw && +items[li].price === +first.price))
+        dup = { extra: r2((+first.price) * (g.lines.length - 1)), count: g.lines.length };
+    }
+    results.push({ tag, ti: g.ti, lines: g.lines, discLines: g.discLines, n, gross, charged, posted, regular: +tag.price || null, expected, diff, status, dup, deal, saleExpired });
+  }
+  const notag = items.map((_, i) => i).filter(i => lineMatch[i].i < 0);
+  const over = r2(results.filter(r => ["over", "deal", "expired"].includes(r.status)).reduce((a, r) => a + r.diff, 0));
+  const under = r2(results.filter(r => r.status === "under").reduce((a, r) => a - r.diff, 0));
+  return { date, store: receipt.store, address: receipt.address, items, discounts, looseDisc, results, notag, over, under, total: receipt.total, lineMatch };
+}
+
+// recall relevance: only flag when the brand shows up in the FDA record, so a generic "spinach" recall doesn't scare everyone
+function recallMatches(tag, records) {
+  const brand = tokenize(tag.brand).words;
+  const prod = tokenize(tag.name).words.filter(w => w.length > 3);
+  return (records || []).filter(rec => {
+    const hay = (String(rec.product_description || "") + " " + String(rec.recalling_firm || "")).toUpperCase();
+    const brandOk = brand.length ? brand.every(b => hay.includes(b)) : false;
+    const prodOk = prod.filter(p => hay.includes(p)).length >= Math.min(1, prod.length);
+    return brandOk && prodOk;
+  });
+}
+// ===== CORE-END =====
+</script>
+
+<script>
+const DEMO = {
+  tags: [
+    { name: "Whole Milk", brand: "Sunny Valley", size: "1 gal", price: 3.49, sale_price: null, sale_ends: null, deal_text: null },
+    { name: "Honey Oat Cereal", brand: "Hearth & Field", size: "14 oz", price: 4.29, sale_price: 2.99, sale_ends: "2026-10-08", deal_text: null },
+    { name: "Spaghetti", brand: "Nonna Rosa", size: "16 oz", price: 1.79, sale_price: null, sale_ends: null, deal_text: "Buy 1 Get 1 Free" },
+    { name: "Baby Spinach", brand: "River Bend", size: "5 oz", price: 3.99, sale_price: null, sale_ends: null, deal_text: null },
+    { name: "Wheat Bread", brand: "Daily Crust", size: "20 oz", price: 2.69, sale_price: null, sale_ends: null, deal_text: null },
+    { name: "Greek Yogurt Plain", brand: "Green Leaf", size: "32 oz", price: 5.49, sale_price: null, sale_ends: null, deal_text: null }
+  ],
+  receipt: {
+    store: "DEMO MART #214", address: "100 Sample Ave, New Brunswick NJ", date: "2026-10-10",
+    items: [
+      { raw: "SV WHL MLK 1G", price: 3.99, qty: 1 },
+      { raw: "HF HNY OAT CRL 14Z", price: 4.29, qty: 1 },
+      { raw: "NR SPGH 16Z", price: 1.79, qty: 1 },
+      { raw: "NR SPGH 16Z", price: 1.79, qty: 1 },
+      { raw: "RB BBY SPNCH 5Z", price: 3.99, qty: 1 },
+      { raw: "DC WHT BRD 20Z", price: 2.69, qty: 1 },
+      { raw: "DC WHT BRD 20Z", price: 2.69, qty: 1 },
+      { raw: "GL GRK YGRT PLN 32Z", price: 5.29, qty: 1 },
+      { raw: "BANANAS 1.21 LB @ .59/LB", price: 0.71, qty: 1 }
+    ],
+    discounts: [], subtotal: 27.23, total: 27.23
+  },
+  recalls: {
+    3: [{ product_description: "River Bend Baby Spinach, 5 oz clamshell", recalling_firm: "River Bend Farms (fictional)", reason_for_recall: "Possible Listeria monocytogenes contamination", classification: "Class I", report_date: "20261007", recall_number: "DEMO-0001", demo: true }]
+  }
+};
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const money = x => "$" + (Math.abs(+x || 0)).toFixed(2);
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("pp_" + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem("pp_" + k, JSON.stringify(v)); } catch (e) {} },
+  del(k) { try { localStorage.removeItem("pp_" + k); } catch (e) {} }
+};
+let state = { tagFiles: [], rcptFile: null, current: null, isDemo: true, dupConfirmed: new Set() };
+
+function setMode() {
+  const live = !!store.get("key", "");
+  $("#modeDot").classList.toggle("live", live);
+  $("#modeTxt").textContent = live ? "Live · Gemini" : "Sample mode";
+}
+
+// ---------- images ----------
+function shrink(file, max = 1600) {
+  return new Promise((res, rej) => {
+    const fr = new FileReader();
+    fr.onerror = () => rej(new Error("Couldn't read that photo."));
+    fr.onload = () => {
+      const img = new Image();
+      img.onerror = () => rej(new Error("That file isn't an image the browser can open. Try a JPG or PNG."));
+      img.onload = () => {
+        const k = Math.min(1, max / Math.max(img.width, img.height));
+        const c = document.createElement("canvas");
+        c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+        const url = c.toDataURL("image/jpeg", 0.85);
+        res({ url, data: url.split(",")[1], mime: "image/jpeg" });
+      };
+      img.src = fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+async function addFiles(files, which) {
+  for (const f of files) {
+    try {
+      const im = await shrink(f);
+      if (which === "tag") state.tagFiles.push(im); else state.rcptFile = im;
+    } catch (e) { showErr(e.message); }
+  }
+  $("#tagThumbs").innerHTML = state.tagFiles.map(i => `<img src="${i.url}" alt="Shelf tag photo">`).join("");
+  $("#rcptThumbs").innerHTML = state.rcptFile ? `<img src="${state.rcptFile.url}" alt="Receipt photo">` : "";
+  $("#tagDrop").classList.toggle("has", state.tagFiles.length > 0);
+  $("#rcptDrop").classList.toggle("has", !!state.rcptFile);
+  $("#runBtn").disabled = !(state.tagFiles.length && state.rcptFile);
+}
+
+// ---------- Gemini ----------
+const PROMPT = (nTags) => `You read grocery shelf price tags and a store receipt.
+Images 1 to ${nTags} are shelf tags (an image may contain several tags). The last image is the receipt.
+Return only JSON in exactly this shape:
+{"tags":[{"name":"","brand":"","size":"","price":0,"sale_price":null,"sale_ends":null,"deal_text":null}],
+ "receipt":{"store":"","address":"","date":"YYYY-MM-DD","items":[{"raw":"","price":0,"qty":1,"expanded":""}],"discounts":[{"raw":"","amount":0}],"subtotal":0,"total":0}}
+Rules:
+- Numbers only for prices, no $ signs.
+- On a tag, "price" is the regular price. If the tag shows a sale price, put it in "sale_price" and its end date (YYYY-MM-DD) in "sale_ends". If only a sale price is shown, set "price" to null.
+- "deal_text" is any multi-buy offer exactly as written, like "Buy 1 Get 1 Free" or "2/$5".
+- For receipt items, "raw" is the item text exactly as printed, "price" is the amount charged on that line, "qty" is the number of units (1 for weighed items), and "expanded" is your best guess at the full product name.
+- Coupons, BOGO savings and other negative lines go in "discounts" with a negative "amount".
+- Use null for anything you cannot read. Never invent items.`;
+
+async function callGemini(tagImgs, rcptImg) {
+  const key = store.get("key", ""), model = store.get("model", "gemini-flash-latest");
+  const parts = [{ text: PROMPT(tagImgs.length) }, ...tagImgs.map(i => ({ inline_data: { mime_type: i.mime, data: i.data } })), { inline_data: { mime_type: rcptImg.mime, data: rcptImg.data } }];
+  let r;
+  try {
+    r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
+      method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+      body: JSON.stringify({ contents: [{ parts }], generationConfig: { responseMimeType: "application/json", temperature: 0 } })
+    });
+  } catch (e) {
+    throw new Error("Couldn't reach Gemini. Live scanning is blocked inside the Claude preview, so run the app from your own link or laptop (see the README). Otherwise, check your internet connection.");
+  }
+  if (!r.ok) {
+    let msg = ""; try { msg = (await r.json()).error.message; } catch (e) {}
+    if (r.status === 404) throw new Error(`Gemini doesn't recognize the model "${model}". Change it in Settings. ${msg}`);
+    if (r.status === 400 || r.status === 403) throw new Error(`Gemini rejected the request. Check your API key in Settings. ${msg}`);
+    throw new Error(`Gemini returned an error (${r.status}). ${msg}`);
+  }
+  const j = await r.json();
+  const txt = j?.candidates?.[0]?.content?.parts?.map(p => p.text || "").join("") || "";
+  try { return JSON.parse(txt.replace(/^```json|```$/g, "").trim()); }
+  catch (e) { throw new Error("Gemini's answer wasn't readable. Try a sharper photo with the whole receipt in frame."); }
+}
+
+// ---------- openFDA ----------
+function ymd(d) { return d.toISOString().slice(0, 10).replace(/-/g, ""); }
+async function fetchRecalls(tag) {
+  const prod = tokenize(tag.name).words.filter(w => w.length > 3).slice(0, 2);
+  if (!prod.length) return [];
+  const to = new Date(), from = new Date(Date.now() - 365 * 864e5);
+  const q = prod.map(w => `product_description:"${w.toLowerCase()}"`).join(" AND ") + ` AND report_date:[${ymd(from)} TO ${ymd(to)}]`;
+  try {
+    const r = await fetch(`https://api.fda.gov/food/enforcement.json?search=${encodeURIComponent(q)}&limit=25`);
+    if (r.status === 404) return [];
+    if (!r.ok) return [];
+    const j = await r.json();
+    return recallMatches(tag, j.results || []);
+  } catch (e) { return []; }
+}
+
+// ---------- flow ----------
+function showErr(m) { const e = $("#err"); e.textContent = m; e.hidden = !m; }
+function prog(steps, at) {
+  const p = $("#progress"); p.hidden = false;
+  p.innerHTML = steps.map((s, i) => `<div class="${i < at ? "done" : i === at ? "on" : ""}">${i < at ? "✓" : i === at ? "›" : "·"} ${esc(s)}</div>`).join("");
+}
+async function runLive() {
+  showErr("");
+  if (!store.get("key", "")) { $("#settings").hidden = false; $("#keyIn").focus(); showErr("Add a Gemini API key in Settings first, or use the sample receipt."); return; }
+  const steps = ["Reading shelf tags and receipt", "Matching receipt lines to tags", "Checking FDA food recalls"];
+  $("#runBtn").disabled = true;
+  try {
+    prog(steps, 0);
+    const data = await callGemini(state.tagFiles, state.rcptFile);
+    const tags = (data.tags || []).filter(t => t && (t.price != null || t.sale_price != null));
+    const receipt = data.receipt || { items: [] };
+    if (!receipt.items || !receipt.items.length) throw new Error("No items found on the receipt. Retake the photo with the whole receipt flat and in focus.");
+    if (!tags.length) throw new Error("No prices found on the shelf tags. Retake the tag photos closer, with the price in focus.");
+    prog(steps, 1);
+    const res = analyze(tags, receipt);
+    prog(steps, 2);
+    const rec = {};
+    await Promise.all(res.results.map(async r => { const m = await fetchRecalls(r.tag); if (m.length) rec[r.ti] = m; }));
+    res.recalls = rec;
+    prog(steps, 3);
+    state.isDemo = false; state.dupConfirmed = new Set();
+    saveHistory(res);
+    render(res);
+  } catch (e) {
+    showErr(e.message);
+  } finally { $("#runBtn").disabled = !(state.tagFiles.length && state.rcptFile); }
+}
+function runDemo() {
+  const res = analyze(DEMO.tags, DEMO.receipt);
+  res.recalls = DEMO.recalls;
+  state.isDemo = true; state.dupConfirmed = new Set();
+  render(res);
+}
+function saveHistory(res) {
+  const h = store.get("history", []);
+  h.unshift({ store: res.store || "Unknown store", date: res.date, over: res.over, issues: res.results.filter(r => ["over", "deal", "expired"].includes(r.status)).length, lines: res.items.length });
+  store.set("history", h.slice(0, 20));
+}
+
+// ---------- render ----------
+const TITLES = {
+  over: "Rang up higher than the shelf",
+  deal: "Deal on the tag didn't apply",
+  expired: "Sale tag still up, charged full price",
+  under: "Charged less than the shelf",
+};
+function displayName(r) { return [r.tag.brand, r.tag.name, r.tag.size].filter(Boolean).join(" "); }
+
+function render(res) {
+  state.current = res;
+  $("#scanView").hidden = true; $("#resultView").hidden = false;
+  $("#sampleNote").hidden = !state.isDemo;
+  const dupExtra = res.results.filter(r => r.dup && state.dupConfirmed.has(r.ti)).reduce((a, r) => a + r.dup.extra, 0);
+  const total = r2(res.over + dupExtra);
+  const flagged = res.results.filter(r => ["over", "deal", "expired"].includes(r.status));
+  const dups = res.results.filter(r => r.dup);
+  const recallCount = Object.keys(res.recalls || {}).length;
+
+  const tb = $("#tagBox");
+  tb.classList.toggle("clean", total <= 0);
+  $("#tagLbl").textContent = total > 0 ? "Overcharged" : "All lines match";
+  const [d, c] = total.toFixed(2).split(".");
+  $("#tagAmt").innerHTML = `<sup>$</sup>${d}.${c}`;
+  tb.classList.remove("pop"); void tb.offsetWidth; tb.classList.add("pop");
+
+  const checked = res.results.reduce((a, r) => a + r.lines.length, 0);
+  $("#sumHead").textContent = total > 0
+    ? `${flagged.length + dups.filter(r => state.dupConfirmed.has(r.ti)).length} ${flagged.length === 1 ? "line" : "lines"} cost you more than the shelf said.`
+    : "Every line we could match rang up at the shelf price.";
+  $("#sumSub").textContent = `${esc(res.store || "Store")} · ${res.date} · ${checked} of ${res.items.length} receipt lines matched to a shelf tag.`;
+  const chips = [];
+  if (flagged.length) chips.push(`<span class="chip r">${flagged.length} overcharge${flagged.length > 1 ? "s" : ""}</span>`);
+  if (dups.length) chips.push(`<span class="chip a">${dups.length} possible double scan</span>`);
+  if (recallCount) chips.push(`<span class="chip r">${recallCount} possible recall</span>`);
+  if (res.under > 0) chips.push(`<span class="chip g">${money(res.under)} undercharged</span>`);
+  if (res.notag.length) chips.push(`<span class="chip">${res.notag.length} without a tag photo</span>`);
+  $("#chips").innerHTML = chips.join("");
+
+  // recalls
+  $("#recalls").innerHTML = Object.entries(res.recalls || {}).map(([ti, recs]) => {
+    const r = res.results.find(x => x.ti === +ti); const rec = recs[0];
+    const dt = rec.report_date ? `${rec.report_date.slice(0, 4)}-${rec.report_date.slice(4, 6)}-${rec.report_date.slice(6, 8)}` : "";
+    return `<div class="recall"><b>Possible recall${rec.demo ? " · sample data" : ""}</b>
+      <div class="rt">${esc(displayName(r))}</div>
+      <div>${esc(rec.reason_for_recall || "")}</div>
+      <div class="rs">${esc(rec.classification || "")} · FDA report ${esc(dt)} · ${esc(rec.recall_number || "")}. Check the lot code and best-by date on your package against the notice before eating it.
+      ${rec.demo ? "" : ` <a href="https://www.fda.gov/safety/recalls-market-withdrawals-safety-alerts" target="_blank" rel="noopener">FDA recalls</a>`}</div></div>`;
+  }).join("");
+
+  // receipt
+  const lineInfo = {};
+  res.results.forEach(r => {
+    const last = r.lines[r.lines.length - 1];
+    r.lines.forEach(li => {
+      let cls = r.status === "ok" ? "ok" : r.status === "under" ? "under" : "over", mk = "✓";
+      if (["over", "deal", "expired"].includes(r.status)) mk = li === last ? "+" + money(r.diff) : "";
+      if (r.status === "under") mk = li === last ? "−" + money(-r.diff) : "";
+      if (r.status === "ok" && r.dup && li !== r.lines[0]) { cls = "dup"; mk = "2× ?"; }
+      if (r.status === "ok" && r.dup && li === r.lines[0]) { cls = "ok"; mk = "✓"; }
+      if (res.recalls && res.recalls[r.ti]) { cls += " recall"; if (r.status === "ok") mk = "RECALL?"; }
+      lineInfo[li] = { cls, mk };
+    });
+  });
+  res.notag.forEach(li => lineInfo[li] = { cls: "notag", mk: "no tag" });
+  $("#receipt").innerHTML = `<div class="hd"><div class="st">${esc(res.store || "RECEIPT")}</div><div class="sm">${esc(res.address || "")}</div><div class="sm">${esc(res.date)}</div></div>` +
+    res.items.map((it, i) => `<div class="rl ${lineInfo[i]?.cls || ""}"><span class="nm">${esc(it.raw)}</span><span class="px">${(+it.price).toFixed(2)}</span><span class="mk">${lineInfo[i]?.mk === "RECALL?" ? "<span>RECALL?</span>" : esc(lineInfo[i]?.mk || "")}</span></div>`).join("") +
+    (res.discounts || []).map(dd => `<div class="rl disc"><span class="nm">${esc(dd.raw)}</span><span class="px">${(+dd.amount).toFixed(2)}</span><span class="mk"></span></div>`).join("") +
+    `<hr class="rsep"><div class="rtot"><span>TOTAL</span><span>${res.total != null ? (+res.total).toFixed(2) : ""}</span></div>`;
+
+  // findings
+  const cards = [];
+  flagged.sort((a, b) => b.diff - a.diff).forEach(r => {
+    let why = "";
+    if (r.status === "over") why = `Shelf tag says ${money(r.posted)}. The register charged ${money(r.charged / r.n)}${r.n > 1 ? " each" : ""}.`;
+    if (r.status === "deal") why = `The tag says ${r.deal.label}. You bought ${r.n} and paid full price for all of them.`;
+    if (r.status === "expired") why = `The sale tag for ${money(r.posted)} was still on the shelf, but it ended ${r.tag.sale_ends}. Ask the store to honor the price that was posted.`;
+    cards.push(`<div class="card r"><div class="sv"></div><div><div class="t">${TITLES[r.status]}</div><div class="d">${esc(displayName(r))}</div><div class="d">${esc(why)}</div><div class="cmp">expected ${money(r.expected)} · charged ${money(r.charged)}</div></div><div class="amt">+${money(r.diff)}</div></div>`);
+  });
+  dups.forEach(r => {
+    const on = state.dupConfirmed.has(r.ti);
+    cards.push(`<div class="card a"><div class="sv"></div><div><div class="t">Scanned ${r.dup.count} times. Did you buy ${r.dup.count}?</div><div class="d">${esc(displayName(r))} rang up ${r.dup.count}× at ${money(r.posted)}.</div>
+      <div class="act"><button class="btn small" type="button" data-dup="${r.ti}" aria-pressed="${on}">${on ? "Counted as an overcharge" : "I only bought one"}</button></div></div><div class="amt">${on ? "+" : ""}${money(r.dup.extra)}</div></div>`);
+  });
+  res.results.filter(r => r.status === "under").forEach(r => {
+    cards.push(`<div class="card g"><div class="sv"></div><div><div class="t">${TITLES.under}</div><div class="d">${esc(displayName(r))}: shelf ${money(r.posted)}, charged ${money(r.charged / r.n)}. Not your problem, but it shows we check both ways.</div></div><div class="amt">−${money(-r.diff)}</div></div>`);
+  });
+  const okN = res.results.filter(r => r.status === "ok" && !r.dup).length;
+  $("#finds").innerHTML = `<h3>What we found</h3>` + cards.join("") +
+    (okN ? `<div class="okline">✓ ${okN} other ${okN === 1 ? "item" : "items"} matched the shelf price.</div>` : "") +
+    (res.notag.length ? `<div class="okline">${res.notag.length} ${res.notag.length === 1 ? "line has" : "lines have"} no shelf tag photo, so we couldn't check ${res.notag.length === 1 ? "it" : "them"}: ${res.notag.map(i => esc(res.items[i].raw)).join(", ")}.</div>` : "");
+  document.querySelectorAll("[data-dup]").forEach(b => b.addEventListener("click", () => {
+    const ti = +b.dataset.dup; state.dupConfirmed.has(ti) ? state.dupConfirmed.delete(ti) : state.dupConfirmed.add(ti); render(state.current);
+  }));
+
+  // next steps
+  const claim = [...flagged.map(r => ({ name: displayName(r), shelf: r.expected, charged: r.charged, diff: r.diff })),
+                 ...dups.filter(r => state.dupConfirmed.has(r.ti)).map(r => ({ name: displayName(r) + " (scanned twice, bought one)", shelf: r.posted, charged: r.posted * r.dup.count, diff: r.dup.extra }))];
+  if (claim.length) {
+    const lines = claim.map(c => `- ${c.name}: should have been ${money(c.shelf)}, charged ${money(c.charged)} (${money(c.diff)} over)`).join("\n");
+    const complaint = `To: NJ Division of Consumer Affairs, Office of Weights and Measures
+Subject: Charged more than the posted shelf price
+
+On ${res.date}, at ${res.store || "[store name]"}${res.address ? ", " + res.address : ""}, I was charged more at the register than the price posted on the shelf for these items:
+
+${lines}
+
+Total overcharge: ${money(total)}.
+I have photos of the shelf tags and my receipt.
+
+Name:
+Phone:
+Email:`;
+    const desk = `Hi, a few things rang up higher than the shelf price. ${claim.map(c => `${c.name} was ${money(c.shelf)} on the shelf and I was charged ${money(c.charged)}`).join("; ")}. Could you refund the ${money(total)} difference? I have photos of the tags.`;
+    $("#next").innerHTML = `
+      <div class="panel"><h3>Get your money back at the store</h3><p>Show this at the service desk with your receipt.</p><textarea id="deskTx" readonly>${esc(desk)}</textarea><div class="row"><button class="btn small" type="button" data-copy="deskTx">Copy</button></div></div>
+      <div class="panel"><h3>Report it to New Jersey</h3><p>The state's Office of Weights and Measures inspects stores that charge more than the posted price. File online or call for a mailed form.</p>
+        <div class="contact">1-800-242-5846</div>
+        <a href="https://www.njconsumeraffairs.gov/Pages/Consumer-Complaints.aspx" target="_blank" rel="noopener">File a complaint online</a>
+        <textarea id="cmpTx" readonly>${esc(complaint)}</textarea><div class="row"><button class="btn small" type="button" data-copy="cmpTx">Copy complaint</button></div></div>`;
+  } else {
+    $("#next").innerHTML = `<div class="panel"><h3>Nothing to dispute</h3><p>Keep the receipt until you're home, and check again next trip. Inspectors have found error rates far above 2% at some stores.</p></div>`;
+  }
+  document.querySelectorAll("[data-copy]").forEach(b => b.addEventListener("click", async () => {
+    const ta = document.getElementById(b.dataset.copy);
+    try { await navigator.clipboard.writeText(ta.value); b.textContent = "Copied"; }
+    catch (e) { ta.focus(); ta.select(); b.textContent = "Selected, press copy"; }
+    setTimeout(() => b.textContent = b.dataset.copy === "cmpTx" ? "Copy complaint" : "Copy", 1800);
+  }));
+
+  // history
+  const h = store.get("history", []);
+  const hv = $("#history");
+  hv.hidden = !h.length || state.isDemo;
+  hv.innerHTML = `<h3>Your past checks</h3>` + h.map(x => `<div class="hrow"><span>${esc(x.store)}</span><span class="m">${esc(x.date)} · ${x.issues}/${x.lines}</span><span class="v">${x.over > 0 ? "+" + money(x.over) : "clean"}</span></div>`).join("");
+}
+
+// ---------- wire up ----------
+$("#tagIn").addEventListener("change", e => { addFiles([...e.target.files], "tag"); e.target.value = ""; });
+$("#rcptIn").addEventListener("change", e => { addFiles([...e.target.files].slice(0, 1), "rcpt"); e.target.value = ""; });
+["tagDrop", "rcptDrop"].forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener("dragover", e => { e.preventDefault(); el.classList.add("over"); });
+  el.addEventListener("dragleave", () => el.classList.remove("over"));
+  el.addEventListener("drop", e => { e.preventDefault(); el.classList.remove("over"); const fs = [...e.dataTransfer.files].filter(f => f.type.startsWith("image/")); addFiles(id === "tagDrop" ? fs : fs.slice(0, 1), id === "tagDrop" ? "tag" : "rcpt"); });
+});
+$("#runBtn").addEventListener("click", runLive);
+$("#sampleBtn").addEventListener("click", runDemo);
+const toScan = () => { $("#resultView").hidden = true; $("#scanView").hidden = false; $("#progress").hidden = true; showErr(""); window.scrollTo(0, 0); };
+$("#newBtn").addEventListener("click", toScan);
+$("#againBtn").addEventListener("click", toScan);
+$("#setBtn").addEventListener("click", () => { const s = $("#settings"); s.hidden = !s.hidden; });
+$("#keyIn").value = store.get("key", "");
+$("#modelIn").value = store.get("model", "gemini-flash-latest");
+$("#saveKey").addEventListener("click", () => {
+  store.set("key", $("#keyIn").value.trim()); store.set("model", $("#modelIn").value.trim() || "gemini-flash-latest");
+  $("#setMsg").textContent = "Saved"; setMode(); setTimeout(() => $("#setMsg").textContent = "", 1500);
+});
+$("#clearKey").addEventListener("click", () => { store.del("key"); $("#keyIn").value = ""; setMode(); });
+// "new receipt" button on results also used when not in demo
+setMode();
+runDemo();
+</script>
+
+</body>
+</html>

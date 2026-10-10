@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PriceProof demo props</title>
+<style>
+  body { font-family: Arial, Helvetica, sans-serif; margin: 24px; color: #111; background: #fff; }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  .note { font-size: 12px; color: #555; margin: 0 0 18px; max-width: 70ch; }
+  .tags { display: grid; grid-template-columns: repeat(3, 2.9in); gap: 14px; }
+  .tag { border: 1.5px solid #111; border-radius: 4px; padding: 10px 12px; height: 1.7in; display: flex; flex-direction: column; justify-content: space-between; position: relative; background: #fff; }
+  .tag.sale { background: #FFD84A; }
+  .tag .brand { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+  .tag .name { font-size: 16px; font-weight: 700; line-height: 1.15; }
+  .tag .size { font-size: 12px; }
+  .tag .price { font-size: 40px; font-weight: 900; text-align: right; line-height: 1; }
+  .tag .price sup { font-size: 18px; vertical-align: 14px; }
+  .tag .flag { position: absolute; top: 8px; right: 10px; font-size: 12px; font-weight: 900; background: #111; color: #fff; padding: 2px 6px; }
+  .tag .small { font-size: 10px; color: #333; }
+  .tag .reg { font-size: 11px; text-align: right; }
+  .demo { font-size: 8px; color: #666; text-transform: uppercase; letter-spacing: .1em; }
+  .receipt { margin-top: 28px; width: 3.1in; font-family: "Courier New", Courier, monospace; font-size: 12.5px; border: 1px dashed #999; padding: 14px 12px; }
+  .receipt .c { text-align: center; }
+  .receipt .l { display: flex; justify-content: space-between; gap: 10px; }
+  .receipt hr { border: 0; border-top: 1px dashed #777; margin: 8px 0; }
+  .wm { text-align: center; font-weight: 700; margin-top: 10px; font-size: 11px; }
+  @media print { body { margin: 0.3in; } .note { display: none; } }
+</style>
+</head>
+<body>
+<h1>PriceProof demo props</h1>
+<p class="note">Print this page (Ctrl/Cmd+P), cut out the six tags and the receipt, and hand them to a judge. Everything here is fictional and marked DEMO. Scanning these with a Gemini key gives the same result as the built-in sample: $3.59 overcharged, one double scan, one undercharge.</p>
+
+<div class="tags">
+  <div class="tag"><div><div class="brand">Sunny Valley</div><div class="name">Whole Milk</div><div class="size">1 gal · $0.03/fl oz</div></div><div class="price"><sup>$</sup>3.49</div><div class="demo">Demo Mart · demo prop</div></div>
+  <div class="tag sale"><div class="flag">SALE</div><div><div class="brand">Hearth &amp; Field</div><div class="name">Honey Oat Cereal</div><div class="size">14 oz · Sale ends 10/08/26</div></div><div><div class="price"><sup>$</sup>2.99</div><div class="reg">Reg. $4.29</div></div><div class="demo">Demo Mart · demo prop</div></div>
+  <div class="tag sale"><div class="flag">BUY 1 GET 1 FREE</div><div><div class="brand">Nonna Rosa</div><div class="name">Spaghetti</div><div class="size">16 oz</div></div><div class="price"><sup>$</sup>1.79</div><div class="demo">Demo Mart · demo prop</div></div>
+  <div class="tag"><div><div class="brand">River Bend</div><div class="name">Baby Spinach</div><div class="size">5 oz · $0.80/oz</div></div><div class="price"><sup>$</sup>3.99</div><div class="demo">Demo Mart · demo prop</div></div>
+  <div class="tag"><div><div class="brand">Daily Crust</div><div class="name">Wheat Bread</div><div class="size">20 oz · $0.13/oz</div></div><div class="price"><sup>$</sup>2.69</div><div class="demo">Demo Mart · demo prop</div></div>
+  <div class="tag"><div><div class="brand">Green Leaf</div><div class="name">Greek Yogurt Plain</div><div class="size">32 oz · $0.17/oz</div></div><div class="price"><sup>$</sup>5.49</div><div class="demo">Demo Mart · demo prop</div></div>
+</div>
+
+<div class="receipt">
+  <div class="c"><b>DEMO MART #214</b><br>100 Sample Ave<br>New Brunswick NJ<br>10/10/2026 11:42 AM</div>
+  <hr>
+  <div class="l"><span>SV WHL MLK 1G</span><span>3.99</span></div>
+  <div class="l"><span>HF HNY OAT CRL 14Z</span><span>4.29</span></div>
+  <div class="l"><span>NR SPGH 16Z</span><span>1.79</span></div>
+  <div class="l"><span>NR SPGH 16Z</span><span>1.79</span></div>
+  <div class="l"><span>RB BBY SPNCH 5Z</span><span>3.99</span></div>
+  <div class="l"><span>DC WHT BRD 20Z</span><span>2.69</span></div>
+  <div class="l"><span>DC WHT BRD 20Z</span><span>2.69</span></div>
+  <div class="l"><span>GL GRK YGRT PLN 32Z</span><span>5.29</span></div>
+  <div class="l"><span>BANANAS 1.21 LB @ .59/LB</span><span>0.71</span></div>
+  <hr>
+  <div class="l"><span>SUBTOTAL</span><span>27.23</span></div>
+  <div class="l"><span>TAX</span><span>0.00</span></div>
+  <div class="l"><b>TOTAL</b><b>27.23</b></div>
+  <div class="wm">*** DEMO PROP · NOT A REAL RECEIPT ***</div>
+</div>
+</body>
+</html>
